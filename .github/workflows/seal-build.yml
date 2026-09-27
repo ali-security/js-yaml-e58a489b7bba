@@ -1,0 +1,38 @@
+name: seal-build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '23'
+
+      - name: Pin npm registry to time machine
+        run: |
+          npm config set registry https://time-machines-npm.sealsecurity.io/
+          npm config set //time-machines-npm.sealsecurity.io/:_authToken=2025-11-14T22:32:17.773000Z
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build browser bundles
+        run: make browserify
+
+      - name: Smoke-test browser bundles
+        run: node .github/seal-dist-smoke.js
+
+      - name: Pack tarball
+        run: npm pack
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: js-yaml-tgz
+          path: js-yaml-*.tgz
+          if-no-files-found: error
